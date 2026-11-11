@@ -1,0 +1,12 @@
+{
+  "name": "bastion-td",
+  "version": "0.1.0",
+  "description": "A dependency-free tower defense game for the browser (vanilla JS + canvas)",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "start": "node scripts/serve.js"
+  },
+  "license": "MIT",
+  "author": "Dans-Vsa"
+}
