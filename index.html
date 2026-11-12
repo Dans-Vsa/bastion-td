@@ -8,10 +8,23 @@
 </head>
 <body>
   <main>
-    <h1>Bastion TD</h1>
-    <div id="hud"><span>Gold: <b id="gold">0</b></span><span>Lives: <b id="lives">0</b></span></div>
+    <header>
+      <h1>Bastion TD</h1>
+      <div class="actions">
+        <button id="speed" class="btn btn-secondary" type="button" aria-label="Toggle game speed">1x</button>
+        <button id="restart" class="btn btn-secondary" type="button">Restart</button>
+        <button id="start" class="btn btn-primary" type="button">Start wave</button>
+      </div>
+    </header>
+    <section id="hud" aria-label="Game status">
+      <div class="stat"><span class="label">Gold</span><b id="gold">0</b></div>
+      <div class="stat"><span class="label">Lives</span><b id="lives">0</b></div>
+      <div class="stat"><span class="label">Wave</span><b id="wave">0</b></div>
+      <div class="stat"><span class="label">Kills</span><b id="kills">0</b></div>
+      <div class="stat wide"><span class="label">Status</span><b id="status" aria-live="polite">Ready</b></div>
+    </section>
     <canvas id="game" width="768" height="480"></canvas>
-    <p class="hint">Click a green tile to build an Arrow Tower (50 gold). Press <kbd>Space</kbd> to send a grunt.</p>
+    <p class="hint">Click a free tile to build an Arrow Tower (50 gold). <kbd>Space</kbd> starts the next wave, <kbd>R</kbd> restarts. Calling a wave early pays 1 gold per second skipped.</p>
   </main>
   <script type="module" src="src/main.js"></script>
 </body>
