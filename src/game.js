@@ -1,5 +1,6 @@
 import { Path } from './path.js';
 import { Enemy, Tower, TOWER_TYPES } from './entities.js';
+import { WaveManager } from './waves.js';
 
 export const TILE = 48;
 export const COLS = 16;
@@ -11,13 +12,32 @@ const DEFAULT_PATH = [
 ].map((p) => ({ x: p.x * TILE, y: p.y * TILE }));
 
 export class Game {
-  constructor({ path = new Path(DEFAULT_PATH), gold = 100, lives = 20 } = {}) {
+  constructor({ path = new Path(DEFAULT_PATH), gold = 100, lives = 20, waveDelay = 10 } = {}) {
     this.path = path;
     this.pathTiles = path.tiles(TILE);
-    this.gold = gold;
-    this.lives = lives;
+    this.initial = { gold, lives, waveDelay };
+    this.reset();
+  }
+
+  /** Back to a fresh game on the same map. */
+  reset() {
+    this.gold = this.initial.gold;
+    this.lives = this.initial.lives;
     this.towers = [];
     this.enemies = [];
+    this.kills = 0;
+    this.waves = new WaveManager({ delay: this.initial.waveDelay });
+  }
+
+  get wave() { return this.waves.number; }
+
+  /** Starts the next wave; calling it during the countdown pays 1 gold per second skipped. */
+  startWave() {
+    if (this.over) return false;
+    const skipped = this.waves.start();
+    if (skipped === null) return false;
+    this.gold += Math.floor(skipped);
+    return true;
   }
 
   get over() { return this.lives <= 0; }
@@ -37,8 +57,8 @@ export class Game {
     return tower;
   }
 
-  spawn(type) {
-    const e = new Enemy(type);
+  spawn(type, hpScale = 1) {
+    const e = new Enemy(type, hpScale);
     this.enemies.push(e);
     return e;
   }
@@ -69,8 +89,9 @@ export class Game {
       if (!target) continue;
       target.hp -= t.damage;
       t.timer = t.cooldown;
-      if (target.hp <= 0) { target.alive = false; this.gold += target.reward; }
+      if (target.hp <= 0) { target.alive = false; this.gold += target.reward; this.kills += 1; }
     }
     this.enemies = this.enemies.filter((e) => e.alive);
+    if (!this.over) this.waves.update(dt, this);
   }
 }
