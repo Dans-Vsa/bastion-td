@@ -7,11 +7,11 @@ export const ENEMY_TYPES = {
 };
 
 export class Enemy {
-  constructor(type = 'grunt') {
+  constructor(type = 'grunt', hpScale = 1) {
     const t = ENEMY_TYPES[type];
     if (!t) throw new Error(`Unknown enemy type: ${type}`);
     this.type = type;
-    this.maxHp = this.hp = t.hp;
+    this.maxHp = this.hp = Math.round(t.hp * hpScale);
     this.speed = t.speed;
     this.reward = t.reward;
     this.distance = 0;
