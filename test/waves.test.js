@@ -102,3 +102,11 @@ test('waves stop advancing after game over', () => {
   assert.equal(g.over, true);
   assert.equal(g.wave, 1);
 });
+
+test('enemy mix introduces runners from wave 3 and tanks from wave 5', async () => {
+  const { enemyFor } = await import('../src/waves.js');
+  assert.deepEqual([0, 1, 2, 3, 4].map((i) => enemyFor(1, i)), ['grunt', 'grunt', 'grunt', 'grunt', 'grunt']);
+  assert.equal(enemyFor(3, 2), 'runner');
+  assert.equal(enemyFor(4, 4), 'grunt');
+  assert.equal(enemyFor(5, 4), 'tank');
+});

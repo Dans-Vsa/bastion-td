@@ -12,6 +12,13 @@ export function waveSpec(n) {
   };
 }
 
+/** Enemy type for the `i`-th spawn of wave `n`: runners from wave 3, tanks from wave 5. */
+export function enemyFor(n, i) {
+  if (n >= 5 && i % 5 === 4) return 'tank';
+  if (n >= 3 && i % 3 === 2) return 'runner';
+  return 'grunt';
+}
+
 /**
  * State machine: waiting -> spawning -> fighting -> waiting ...
  * The first wave waits for the player; later waves auto-start after `delay` seconds.
@@ -53,7 +60,7 @@ export class WaveManager {
     if (this.state === 'spawning') {
       this.spawnTimer -= dt;
       while (this.toSpawn > 0 && this.spawnTimer <= 0) {
-        game.spawn('grunt', this.spec.hpScale);
+        game.spawn(enemyFor(this.number, this.spec.count - this.toSpawn), this.spec.hpScale);
         this.toSpawn -= 1;
         this.spawnTimer += this.spec.interval;
       }
