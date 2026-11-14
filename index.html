@@ -23,8 +23,18 @@
       <div class="stat"><span class="label">Kills</span><b id="kills">0</b></div>
       <div class="stat wide"><span class="label">Status</span><b id="status" aria-live="polite">Ready</b></div>
     </section>
+    <section id="build" aria-label="Build menu">
+      <button id="pick-arrow" class="btn btn-secondary pick" type="button" aria-pressed="true">1 Arrow <span>50</span></button>
+      <button id="pick-frost" class="btn btn-secondary pick" type="button" aria-pressed="false">2 Frost <span>70</span></button>
+      <button id="pick-cannon" class="btn btn-secondary pick" type="button" aria-pressed="false">3 Cannon <span>100</span></button>
+      <div id="selection" class="selection" hidden>
+        <span id="sel-info">No tower selected</span>
+        <button id="upgrade" class="btn btn-secondary" type="button">Upgrade</button>
+        <button id="sell" class="btn btn-secondary" type="button">Sell</button>
+      </div>
+    </section>
     <canvas id="game" width="768" height="480"></canvas>
-    <p class="hint">Click a free tile to build an Arrow Tower (50 gold). <kbd>Space</kbd> starts the next wave, <kbd>R</kbd> restarts. Calling a wave early pays 1 gold per second skipped.</p>
+    <p class="hint">Pick a tower (<kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>) and click a free tile to build it; click a tower to upgrade or sell it. <kbd>Space</kbd> starts the next wave, <kbd>R</kbd> restarts. Calling a wave early pays 1 gold per second skipped.</p>
   </main>
   <script type="module" src="src/main.js"></script>
 </body>

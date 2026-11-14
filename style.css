@@ -43,3 +43,9 @@ kbd { font: 13px var(--mono); background: var(--surface-2); border: 1px solid va
   #hud { grid-template-columns: repeat(2, 1fr); }
   .stat.wide { grid-column: 1 / -1; }
 }
+
+#build { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.pick span { font-family: var(--mono); color: var(--ink-subtle); margin-left: 6px; }
+.pick[aria-pressed="true"] { border-color: var(--primary); background: var(--surface-2); }
+.selection { display: flex; gap: 8px; align-items: center; margin-left: auto; font-size: 14px; }
+.selection[hidden] { display: none; }
