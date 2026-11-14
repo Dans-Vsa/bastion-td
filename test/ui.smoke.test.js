@@ -5,7 +5,8 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 class FakeElement {
-  constructor(id) { this.id = id; this.textContent = ''; this.disabled = false; this.listeners = {}; this.width = 768; this.height = 480; }
+  constructor(id) { this.id = id; this.textContent = ''; this.disabled = false; this.listeners = {}; this.attrs = {}; this.width = 768; this.height = 480; }
+  setAttribute(k, v) { this.attrs[k] = v; }
   addEventListener(type, fn) { this.listeners[type] = fn; }
   fire(type, ev = {}) { this.listeners[type]?.(ev); }
   getBoundingClientRect() { return { left: 0, top: 0, width: this.width, height: this.height }; }
@@ -35,6 +36,28 @@ test('the page boots, renders the HUD and reacts to the controls', async () => {
   tick();
   assert.equal(game.towers.length, 1);
   assert.equal(text('gold'), '50');
+
+  // select the tower, upgrade it, then sell it
+  game.gold = 500;
+  elements.get('game').fire('click', { clientX: 2.5 * 48, clientY: 3.5 * 48 });
+  tick();
+  assert.equal(elements.get('selection').hidden, false);
+  assert.match(text('sel-info'), /^Arrow Tower L1/);
+  elements.get('upgrade').fire('click');
+  tick();
+  assert.match(text('sel-info'), /^Arrow Tower L2/);
+  elements.get('sell').fire('click');
+  tick();
+  assert.equal(game.towers.length, 0);
+  assert.equal(elements.get('selection').hidden, true);
+
+  // switch tower type with the keyboard and build a cannon
+  globalThis.window.onkeydown({ code: 'Digit3', target: {}, preventDefault() {} });
+  assert.equal(elements.get('pick-cannon').attrs['aria-pressed'], 'true');
+  elements.get('game').fire('click', { clientX: 2.5 * 48, clientY: 3.5 * 48 });
+  assert.equal(game.towers[0].type, 'cannon');
+  game.towers.length = 0;
+  game.gold = 100;
 
   elements.get('start').fire('click');
   tick();
