@@ -3,7 +3,7 @@
 A dependency-free tower defense game for the browser, built with vanilla JavaScript and the Canvas API.
 The game logic is kept separate from rendering so it can be unit-tested with Node's built-in test runner.
 
-> Status: **work in progress** (milestone 2 of 4)
+> Status: **work in progress** (milestone 3 of 4)
 
 ## Features
 
@@ -15,7 +15,8 @@ The game logic is kept separate from rendering so it can be unit-tested with Nod
 - [x] Waves with a scaling difficulty curve (more, faster-spawning, tougher enemies)
 - [x] Wave timer: auto-start countdown between waves, early-call gold bonus, wave clear bonus
 - [x] HUD (gold, lives, wave, kills, status), start / call-early button, 2x speed, restart
-- [ ] More tower and enemy types, upgrades
+- [x] Three tower types (Arrow, Frost slow, Cannon splash) and three enemy types (Grunt, Runner, Tank)
+- [x] Tower upgrades (3 levels) and selling (70% refund), range preview rings
 - [ ] Sound, polish, GitHub Actions CI, v1.0.0
 
 ## Tech stack
@@ -35,7 +36,10 @@ Then open http://localhost:5173.
 
 ## How to play
 
-- Click a free tile to build an Arrow Tower (50 gold). Towers cannot be built on the road.
+- Pick a tower with the build menu or keys `1`/`2`/`3`, then click a free tile. Towers cannot be built on the road.
+  - **Arrow** (50): fast single-target shots. **Frost** (70): weak hits that slow enemies by 50%. **Cannon** (100): slow shots with splash damage.
+  - Click a built tower to see its range, **Upgrade** it (up to level 3) or **Sell** it (70% of the gold invested).
+  - Runners appear from wave 3 (fast, fragile) and tanks from wave 5 (slow, tough, big reward).
 - Press **Start wave** (or `Space`) to send the first wave. Every enemy that reaches the end costs one life.
 - Clearing a wave pays a bonus and starts a 10 second countdown to the next one.
   Calling the next wave early pays 1 gold per second skipped.
