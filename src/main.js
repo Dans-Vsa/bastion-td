@@ -1,5 +1,5 @@
 import { Game, TILE, COLS, ROWS } from './game.js';
-import { ENEMY_TYPES } from './entities.js';
+import { ENEMY_TYPES, TOWER_TYPES } from './entities.js';
 
 const $ = (id) => document.getElementById(id);
 const canvas = $('game');
@@ -10,15 +10,34 @@ const speedBtn = $('speed');
 const game = new Game();
 let hover = null;
 let speed = 1;
+let pick = 'arrow';
+let selected = null;
+const picks = Object.fromEntries(Object.keys(TOWER_TYPES).map((k) => [k, $(`pick-${k}`)]));
+const selPanel = $('selection');
+const upgradeBtn = $('upgrade');
+const sellBtn = $('sell');
 
 canvas.addEventListener('mousemove', (ev) => { hover = tileAt(ev); });
 canvas.addEventListener('mouseleave', () => { hover = null; });
 canvas.addEventListener('click', (ev) => {
   const t = tileAt(ev);
-  game.placeTower('arrow', t.col, t.row);
+  const existing = game.towerAt(t.col, t.row);
+  if (existing) { selected = existing; return; }
+  selected = null;
+  game.placeTower(pick, t.col, t.row);
 });
+for (const [type, btn] of Object.entries(picks)) btn.addEventListener('click', () => choose(type));
+upgradeBtn.addEventListener('click', () => { if (selected) game.upgradeTower(selected); });
+sellBtn.addEventListener('click', () => { if (selected) { game.sellTower(selected); selected = null; } });
+
+function choose(type) {
+  pick = type;
+  selected = null;
+  for (const [k, btn] of Object.entries(picks)) btn.setAttribute('aria-pressed', String(k === type));
+}
 startBtn.addEventListener('click', () => game.startWave());
-$('restart').addEventListener('click', () => game.reset());
+$('restart').addEventListener('click', restart);
+function restart() { game.reset(); selected = null; }
 speedBtn.addEventListener('click', () => {
   speed = speed === 1 ? 2 : 1;
   speedBtn.textContent = `${speed}x`;
@@ -26,7 +45,10 @@ speedBtn.addEventListener('click', () => {
 window.addEventListener('keydown', (ev) => {
   if (ev.target instanceof HTMLButtonElement) return; // let Space/Enter activate the focused button
   if (ev.code === 'Space') { ev.preventDefault(); game.startWave(); }
-  if (ev.code === 'KeyR') game.reset();
+  if (ev.code === 'KeyR') restart();
+  const n = Number(ev.code.replace('Digit', ''));
+  if (n >= 1 && n <= Object.keys(picks).length) choose(Object.keys(picks)[n - 1]);
+  if (ev.code === 'Escape') selected = null;
 });
 
 function tileAt(ev) {
@@ -53,6 +75,17 @@ function setText(node, value) {
   if (node.textContent !== text) node.textContent = text;
 }
 
+function drawSelection() {
+  if (selected && !game.towers.includes(selected)) selected = null;
+  selPanel.hidden = !selected;
+  if (!selected) return;
+  const t = selected;
+  setText($('sel-info'), `${t.name} L${t.level} · dmg ${t.damage} · range ${t.range}`);
+  setText(upgradeBtn, t.maxed ? 'Max level' : `Upgrade ${t.upgradeCost}`);
+  upgradeBtn.disabled = t.maxed || game.gold < t.upgradeCost || game.over;
+  setText(sellBtn, `Sell +${t.sellValue}`);
+}
+
 function drawHud() {
   const h = hudStatus();
   setText(el.gold, game.gold);
@@ -74,11 +107,21 @@ function draw() {
   if (hover && !game.over && game.canPlace(hover.col, hover.row)) {
     ctx.fillStyle = 'rgba(94, 106, 210, 0.3)';
     ctx.fillRect(hover.col * TILE, hover.row * TILE, TILE, TILE);
+    ctx.strokeStyle = 'rgba(94, 106, 210, 0.6)';
+    ctx.beginPath();
+    ctx.arc((hover.col + 0.5) * TILE, (hover.row + 0.5) * TILE, TOWER_TYPES[pick].range, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  if (selected) {
+    ctx.strokeStyle = 'rgba(247, 248, 248, 0.5)';
+    ctx.beginPath();
+    ctx.arc(selected.x, selected.y, selected.range, 0, Math.PI * 2);
+    ctx.stroke();
   }
   for (const t of game.towers) {
     ctx.fillStyle = t.color;
     ctx.beginPath();
-    ctx.arc(t.x, t.y, TILE * 0.35, 0, Math.PI * 2);
+    ctx.arc(t.x, t.y, TILE * (0.28 + 0.05 * t.level), 0, Math.PI * 2);
     ctx.fill();
   }
   for (const e of game.enemies) {
@@ -104,6 +147,7 @@ function draw() {
     ctx.fillText(`Reached wave ${game.wave} with ${game.kills} kills. Press R to restart.`, canvas.width / 2, canvas.height / 2 + 28);
   }
   drawHud();
+  drawSelection();
 }
 
 let last = performance.now();
