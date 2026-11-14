@@ -53,7 +53,7 @@ export class Tower {
 
   get maxed() { return this.level >= MAX_LEVEL; }
   get upgradeCost() { return this.maxed ? null : Math.round(TOWER_TYPES[this.type].cost * 0.8 * this.level); }
-  get sellValue() { return Math.floor(this.invested * SELL_RATIO); }
+  get sellValue() { return Math.floor(this.invested * SELL_RATIO + 1e-9); }
 
   /** Raises damage and range by one level. Gold is handled by the game. */
   levelUp() {

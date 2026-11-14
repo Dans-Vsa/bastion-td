@@ -57,6 +57,27 @@ export class Game {
     return tower;
   }
 
+  towerAt(col, row) { return this.towers.find((t) => t.col === col && t.row === row) ?? null; }
+
+  /** Levels a tower up if there is enough gold. Returns true on success. */
+  upgradeTower(tower) {
+    const cost = tower.upgradeCost;
+    if (cost === null || this.gold < cost || !this.towers.includes(tower)) return false;
+    this.gold -= cost;
+    tower.invested += cost;
+    tower.levelUp();
+    return true;
+  }
+
+  /** Removes a tower and refunds part of what was spent on it. Returns the refund, or 0. */
+  sellTower(tower) {
+    const i = this.towers.indexOf(tower);
+    if (i < 0) return 0;
+    this.towers.splice(i, 1);
+    this.gold += tower.sellValue;
+    return tower.sellValue;
+  }
+
   spawn(type, hpScale = 1) {
     const e = new Enemy(type, hpScale);
     this.enemies.push(e);
@@ -76,9 +97,28 @@ export class Game {
     return best;
   }
 
+  /** Applies a tower shot: damage (with splash around the target) and slow. */
+  hit(tower, target) {
+    const victims = [target];
+    if (tower.splash) {
+      const c = this.enemyPos(target);
+      for (const e of this.enemies) {
+        if (e === target || !e.alive) continue;
+        const p = this.enemyPos(e);
+        if (Math.hypot(p.x - c.x, p.y - c.y) <= tower.splash) victims.push(e);
+      }
+    }
+    for (const e of victims) {
+      e.hp -= tower.damage;
+      if (tower.slow) e.applySlow(tower.slow, tower.slowTime);
+      if (e.hp <= 0 && e.alive) { e.alive = false; this.gold += e.reward; this.kills += 1; }
+    }
+  }
+
   update(dt) {
     if (this.over) return;
     for (const e of this.enemies) {
+      e.tick(dt);
       e.distance += e.speed * dt;
       if (e.distance >= this.path.length) { e.alive = false; e.reachedBase = true; this.lives -= 1; }
     }
@@ -87,9 +127,8 @@ export class Game {
       if (t.timer > 0) continue;
       const target = this.target(t);
       if (!target) continue;
-      target.hp -= t.damage;
       t.timer = t.cooldown;
-      if (target.hp <= 0) { target.alive = false; this.gold += target.reward; this.kills += 1; }
+      this.hit(t, target);
     }
     this.enemies = this.enemies.filter((e) => e.alive);
     if (!this.over) this.waves.update(dt, this);
