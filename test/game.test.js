@@ -47,3 +47,58 @@ test('game over when lives run out', () => {
   g.update(100);
   assert.equal(g.over, true);
 });
+
+test('upgrading costs gold, raises damage and caps at the max level', () => {
+  const g = new Game({ gold: 1000 });
+  const t = g.placeTower('arrow', 2, 3);
+  const dmg = t.damage;
+  assert.equal(t.upgradeCost, 40);
+  assert.ok(g.upgradeTower(t));
+  assert.equal(t.level, 2);
+  assert.ok(t.damage > dmg);
+  assert.ok(g.upgradeTower(t));
+  assert.equal(t.maxed, true);
+  assert.equal(g.upgradeTower(t), false);
+});
+
+test('upgrade fails without enough gold', () => {
+  const g = new Game({ gold: 50 });
+  const t = g.placeTower('arrow', 2, 3);
+  assert.equal(g.upgradeTower(t), false);
+  assert.equal(t.level, 1);
+});
+
+test('selling refunds 70% of the gold invested and frees the tile', () => {
+  const g = new Game({ gold: 1000 });
+  const t = g.placeTower('arrow', 2, 3);
+  g.upgradeTower(t);
+  const before = g.gold;
+  assert.equal(g.sellTower(t), 63);
+  assert.equal(g.gold, before + 63);
+  assert.equal(g.canPlace(2, 3), true);
+  assert.equal(g.sellTower(t), 0);
+});
+
+test('frost towers slow enemies and the slow wears off', () => {
+  const g = new Game({ gold: 1000 });
+  g.placeTower('frost', 4, 2);
+  const e = g.spawn('grunt');
+  e.distance = 4 * 48;
+  g.update(0.01);
+  assert.equal(e.speed, 30);
+  g.towers.length = 0;
+  g.update(2);
+  assert.equal(e.speed, 60);
+});
+
+test('cannon splash damages nearby enemies but not distant ones', () => {
+  const g = new Game({ gold: 1000 });
+  g.placeTower('cannon', 4, 2);
+  const a = g.spawn('tank'); a.distance = 220;
+  const b = g.spawn('tank'); b.distance = 200;
+  const far = g.spawn('tank'); far.distance = 60;
+  g.update(0.01);
+  assert.equal(a.hp, 160 - 22);
+  assert.equal(b.hp, 160 - 22);
+  assert.equal(far.hp, 160);
+});
