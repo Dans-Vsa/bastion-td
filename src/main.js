@@ -67,7 +67,8 @@ function hudStatus() {
     const s = Math.ceil(w.countdown);
     return { status: `Next wave in ${s}s`, button: `Call early +${Math.floor(w.countdown)}`, canStart: true };
   }
-  return { status: `${w.toSpawn + game.enemies.length} enemies left`, button: 'Wave running', canStart: false };
+  const left = w.toSpawn + game.enemies.length;
+  return { status: `${left} ${left === 1 ? 'enemy' : 'enemies'} left`, button: 'Wave running', canStart: false };
 }
 
 function setText(node, value) {
@@ -80,7 +81,7 @@ function drawSelection() {
   selPanel.hidden = !selected;
   if (!selected) return;
   const t = selected;
-  setText($('sel-info'), `${t.name} L${t.level} · dmg ${t.damage} · range ${t.range}`);
+  setText($('sel-info'), `${t.name} L${t.level} Â· dmg ${t.damage} Â· range ${t.range}`);
   setText(upgradeBtn, t.maxed ? 'Max level' : `Upgrade ${t.upgradeCost}`);
   upgradeBtn.disabled = t.maxed || game.gold < t.upgradeCost || game.over;
   setText(sellBtn, `Sell +${t.sellValue}`);
