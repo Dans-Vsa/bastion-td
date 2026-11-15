@@ -1,9 +1,11 @@
 # Bastion TD
 
+[![CI](https://github.com/Dans-Vsa/bastion-td/actions/workflows/ci.yml/badge.svg)](https://github.com/Dans-Vsa/bastion-td/actions/workflows/ci.yml)
+
 A dependency-free tower defense game for the browser, built with vanilla JavaScript and the Canvas API.
 The game logic is kept separate from rendering so it can be unit-tested with Node's built-in test runner.
 
-> Status: **work in progress** (milestone 3 of 4)
+> Status: **v1.0.0** - feature complete. See the [CHANGELOG](CHANGELOG.md).
 
 ## Features
 
@@ -17,11 +19,13 @@ The game logic is kept separate from rendering so it can be unit-tested with Nod
 - [x] HUD (gold, lives, wave, kills, status), start / call-early button, 2x speed, restart
 - [x] Three tower types (Arrow, Frost slow, Cannon splash) and three enemy types (Grunt, Runner, Tank)
 - [x] Tower upgrades (3 levels) and selling (70% refund), range preview rings
-- [ ] Sound, polish, GitHub Actions CI, v1.0.0
+- [x] Sound effects synthesised with WebAudio (no audio files) and a remembered mute toggle
+- [x] Visual effects: shot tracers, splash rings, kill bursts, floating gold, leak flash
+- [x] GitHub Actions CI (Node.js 20 and 22) and a v1.0.0 release
 
 ## Tech stack
 
-Vanilla JS (ES modules), HTML5 Canvas, Node.js `node:test` for tests. No runtime dependencies.
+Vanilla JS (ES modules), HTML5 Canvas, Web Audio API, Node.js `node:test` for tests, GitHub Actions for CI. No runtime dependencies.
 
 ## Getting started
 
@@ -44,6 +48,7 @@ Then open http://localhost:5173.
 - Clearing a wave pays a bonus and starts a 10 second countdown to the next one.
   Calling the next wave early pays 1 gold per second skipped.
 - Toggle **1x / 2x** to speed the game up, and **Restart** (or `R`) to start over.
+- **Sound on / off** (or `M`) mutes the sound effects; the choice is remembered in the browser.
 
 ## Project structure
 
@@ -53,12 +58,29 @@ style.css         styles
 src/path.js       waypoint path math
 src/entities.js   tower / enemy definitions
 src/waves.js      wave difficulty curve and wave state machine
-src/game.js       game state and rules (no DOM)
+src/game.js       game state and rules (no DOM), emits events for effects and sound
+src/effects.js    short-lived visual effects built from game events
+src/audio.js      WebAudio synth sound effects
 src/main.js       canvas rendering, HUD and input
 scripts/serve.js  tiny static dev server
 test/             unit tests + a fake-DOM smoke test of the page
+.github/workflows CI workflow
+CHANGELOG.md      release notes
 ```
+
+## Architecture
+
+`Game` owns all the rules and never touches the DOM. Whenever something happens (a shot, a kill, a leak, a new wave)
+it records an event; once per frame `src/main.js` drains the queue and hands the events to `Effects` (visuals) and
+`Sound` (audio). This keeps the rules fully testable in Node, and the effects and sound are tested on their own with
+fake timers and a fake `AudioContext`.
+
+## Future ideas
+
+- More maps and a map picker
+- Saving high scores
+- Touch-friendly controls for phones
 
 ## License
 
-MIT
+MIT - see [LICENSE](LICENSE).
