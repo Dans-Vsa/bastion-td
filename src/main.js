@@ -1,5 +1,7 @@
 import { Game, TILE, COLS, ROWS } from './game.js';
 import { ENEMY_TYPES, TOWER_TYPES } from './entities.js';
+import { Effects, progress } from './effects.js';
+import { Sound } from './audio.js';
 
 const $ = (id) => document.getElementById(id);
 const canvas = $('game');
@@ -8,6 +10,9 @@ const el = { gold: $('gold'), lives: $('lives'), wave: $('wave'), kills: $('kill
 const startBtn = $('start');
 const speedBtn = $('speed');
 const game = new Game();
+const effects = new Effects();
+const sound = new Sound({ muted: loadMuted() });
+const muteBtn = $('mute');
 let hover = null;
 let speed = 1;
 let pick = 'arrow';
@@ -37,18 +42,40 @@ function choose(type) {
 }
 startBtn.addEventListener('click', () => game.startWave());
 $('restart').addEventListener('click', restart);
-function restart() { game.reset(); selected = null; }
+function restart() { game.reset(); effects.clear(); selected = null; }
+
+// Browsers only start audio after a user gesture, so unlock it on the first click or key press.
+window.addEventListener('pointerdown', () => sound.unlock());
+muteBtn.addEventListener('click', toggleMute);
+function toggleMute() {
+  sound.toggle();
+  saveMuted(sound.muted);
+  renderMute();
+}
+function renderMute() {
+  muteBtn.textContent = sound.muted ? 'Sound off' : 'Sound on';
+  muteBtn.setAttribute('aria-pressed', String(!sound.muted));
+}
+function loadMuted() {
+  try { return window.localStorage?.getItem('bastion-td:muted') === '1'; } catch { return false; }
+}
+function saveMuted(muted) {
+  try { window.localStorage?.setItem('bastion-td:muted', muted ? '1' : '0'); } catch { /* storage blocked */ }
+}
+renderMute();
 speedBtn.addEventListener('click', () => {
   speed = speed === 1 ? 2 : 1;
   speedBtn.textContent = `${speed}x`;
 });
 window.addEventListener('keydown', (ev) => {
+  sound.unlock();
   if (ev.target instanceof HTMLButtonElement) return; // let Space/Enter activate the focused button
   if (ev.code === 'Space') { ev.preventDefault(); game.startWave(); }
   if (ev.code === 'KeyR') restart();
   const n = Number(ev.code.replace('Digit', ''));
   if (n >= 1 && n <= Object.keys(picks).length) choose(Object.keys(picks)[n - 1]);
   if (ev.code === 'Escape') selected = null;
+  if (ev.code === 'KeyM') toggleMute();
 });
 
 function tileAt(ev) {
@@ -98,6 +125,37 @@ function drawHud() {
   startBtn.disabled = !h.canStart;
 }
 
+function drawEffects() {
+  for (const fx of effects.items) {
+    const k = progress(fx);
+    ctx.globalAlpha = 1 - k;
+    if (fx.kind === 'beam') {
+      ctx.strokeStyle = fx.color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(fx.x1, fx.y1);
+      ctx.lineTo(fx.x2, fx.y2);
+      ctx.stroke();
+    } else if (fx.kind === 'splash' || fx.kind === 'burst') {
+      ctx.strokeStyle = fx.kind === 'splash' ? '#fb923c' : '#f7f8f8';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(fx.x, fx.y, fx.radius * (0.4 + 0.6 * k), 0, Math.PI * 2);
+      ctx.stroke();
+    } else if (fx.kind === 'text') {
+      ctx.fillStyle = '#facc15';
+      ctx.textAlign = 'center';
+      ctx.font = '600 14px system-ui';
+      ctx.fillText(fx.text, fx.x, fx.y - 24 * k);
+    } else if (fx.kind === 'flash') {
+      ctx.fillStyle = 'rgba(248, 113, 113, 0.25)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+  ctx.globalAlpha = 1;
+  ctx.lineWidth = 1;
+}
+
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = '#23252a';
@@ -136,6 +194,7 @@ function draw() {
     ctx.fillStyle = '#4ade80';
     ctx.fillRect(p.x - 12, p.y - 20, 24 * Math.max(0, e.hp / e.maxHp), 4);
   }
+  drawEffects();
   if (game.over) {
     ctx.fillStyle = 'rgba(1, 1, 2, 0.75)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -156,6 +215,10 @@ function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
   for (let i = 0; i < speed; i++) game.update(dt);
+  const events = game.drainEvents();
+  effects.fromEvents(events);
+  sound.fromEvents(events);
+  effects.update(dt * speed);
   draw();
   requestAnimationFrame(frame);
 }

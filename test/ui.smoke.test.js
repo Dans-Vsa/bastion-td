@@ -64,7 +64,14 @@ test('the page boots, renders the HUD and reacts to the controls', async () => {
   assert.equal(text('wave'), '1');
   assert.equal(text('start'), 'Wave running');
   assert.equal(elements.get('start').disabled, true);
-  assert.match(text('status'), /^\d+ enemies left$/);
+  assert.match(text('status'), /^\d+ enem(y|ies) left$/);
+
+  // sound toggle works even without WebAudio or localStorage
+  assert.equal(text('mute'), 'Sound on');
+  elements.get('mute').fire('click');
+  assert.equal(text('mute'), 'Sound off');
+  globalThis.window.onkeydown({ code: 'KeyM', target: {}, preventDefault() {} });
+  assert.equal(text('mute'), 'Sound on');
 
   elements.get('speed').fire('click');
   assert.equal(text('speed'), '2x');
